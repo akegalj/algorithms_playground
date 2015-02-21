@@ -1,3 +1,4 @@
+# There is a good proof of this concept at http://codesays.com/2014/solution-to-min-avg-two-slice-by-codility/
 def solution(A):
     # write your code in Python 2.7
     minAvg = 10001
