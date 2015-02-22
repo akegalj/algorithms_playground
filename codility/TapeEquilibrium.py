@@ -3,9 +3,9 @@ def solution(A):
     right = sum(A)
     left = 0
     best = 10**8
-    for x in xrange(len(A) - 1):
-        left += A[x]
-        right -= A[x]
+    for x in A[:-1]:
+        left += x
+        right -= x
         best = min(abs(left - right), best)
     return best
 
