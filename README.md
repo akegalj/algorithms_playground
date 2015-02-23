@@ -11,3 +11,5 @@ Project containing solution for varius algorithmic problems.
   * [FrogRiverOne](https://github.com/akegalj/algorithms_playground/blob/master/codility/FrogRiverOne.py)
   * [MaxCounters](https://github.com/akegalj/algorithms_playground/blob/master/codility/MaxCounters.py)
   * [MissingInteger](https://github.com/akegalj/algorithms_playground/blob/master/codility/MissingInteger.py)
+
+  * [NumberOfDiscIntersections*not implemented*](not implemented yet)
