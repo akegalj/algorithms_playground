@@ -1,7 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
-import qualified Data.Vector.Unboxed.Mutable as VUM
-import qualified Data.Vector.Unboxed as VU
-import Control.Monad.Primitive
+import Data.Array.ST
+import Data.Array.Base
 import Control.Monad.ST
 import Control.Monad
 
@@ -21,20 +20,21 @@ readTests = map readTest . zip [1..] . tail . lines
         readTest (cn,xs) = Case cn (a,b) k
           where (a:b:k:[]) = map read $ words xs
 
-primacity :: PrimMonad m => Int -> m (VU.Vector Int)
-primacity n = do
-  v <- VUM.replicate (n + 1) 0
+primacity :: Int -> UArray Int Primacity
+primacity n = runSTUArray $ do
+  v <- newArray (0,n) 0
   forM_ [2..n `div` 2] $ \i -> do
-    val <- VUM.unsafeRead v i
+    val <- unsafeRead v i
     when (val == 0) . forM_ [i, i*2 .. n] $ \ii -> do
-      VUM.unsafeRead v ii >>= VUM.unsafeWrite v ii . (+1)
-  VU.unsafeFreeze v
+      unsafeRead v ii >>= unsafeWrite v ii . (+1)
+  return v
 
-prims :: VU.Vector Int
-prims = runST $ primacity (10^7)
+prims :: [Primacity]
+prims = elems $ primacity (10^7)
 
 solve :: TestCase -> Solution
-solve (Case cn (a,b) k) = Solution cn . VU.length . VU.filter (== k) $ VU.slice a (b-a+1) prims
+solve (Case cn (a,b) k) = Solution cn . length . filter (== k) $ slice a (b-a+1) prims
+  where slice s l = take l . drop s
 
 main = do
   input <- getContents
