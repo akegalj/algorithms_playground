@@ -29,6 +29,7 @@ primacity n = runSTUArray $ do
       unsafeRead v ii >>= unsafeWrite v ii . (+1)
   return v
 
+-- | Implement accumulated sum (k <= 8) if speed is an issue
 prims :: [Primacity]
 prims = elems $ primacity (10^7)
 
