@@ -28,7 +28,7 @@ readTests = map readTest . zip [1..] . tail . lines
 
 stressFree :: (Win,Lose) -> StressFree
 stressFree = (sf!)
-  where sf = array ((0,0),(maxScore,maxScore)) $ ((0,0),0):[((i,j), compSf i j `mod` moduloConst) | i <- [0..maxScore], j <- [0..maxScore], i>0 || j>0]
+  where sf = array ((0,0),(maxScore,maxScore)) $ [((i,j), compSf i j `mod` moduloConst) | i <- [0..maxScore], j <- [0..i]]
         compSf 0 _ = 0
         compSf _ 0 = 1
         compSf i j = if i>j
