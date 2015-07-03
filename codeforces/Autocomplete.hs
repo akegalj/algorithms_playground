@@ -2,7 +2,7 @@
 
 import qualified Data.ByteString.Lazy.Char8 as BSC
 import qualified Data.ByteString.Lazy as BS
-import Data.List.Split (splitWhen)
+-- import Data.List.Split (splitWhen)
 import Data.Char (isNumber)
 import GHC.Word (Word8(..))
 import qualified Data.Map as M
@@ -22,6 +22,12 @@ emptyForest = M.empty
 
 instance Show Solution where
   show (Solution cn ksn) = "Case #" ++ show cn ++ ": " ++ show ksn
+
+splitWhen :: (a -> Bool) -> [a] -> [[a]]
+splitWhen f = reverse . map reverse . foldl split' []
+  where split' [] x     = [[x]]
+        split' all@(x:xs) y | f y       = []:all
+                            | otherwise = (y:x):xs
 
 readTests :: BS.ByteString -> [TestCase]
 readTests = map createTest . zip [1..] . splitWhen isNum . drop 2 . BSC.lines
