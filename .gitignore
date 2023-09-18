@@ -6,3 +6,5 @@
 .exercism/
 part1
 part2
+__pycache__/
+*.swp
