@@ -1,6 +1,7 @@
 #!/usr/bin/env nix-shell
 #!nix-shell --pure -i runhaskell -p "haskellPackages.ghcWithPackages (pkgs: with pkgs; [ split ])"
 
+import Control.Arrow ((&&&))
 import Data.List
 import Data.List.Split
 
@@ -35,4 +36,4 @@ parse = map (map (createSet . map words . splitOn ",") . splitOn ";" . head . ta
     createSet xs = (getColor "red" xs, getColor "green" xs, getColor "blue" xs)
     getColor c = maybe 0 (read . head) . find ((== c) . last)
 
-main = interact $ show . part2 . parse
+main = interact $ show . (part1 &&& part2) . parse
