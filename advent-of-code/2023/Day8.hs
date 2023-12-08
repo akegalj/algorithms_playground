@@ -1,23 +1,23 @@
 import Control.Arrow ((&&&))
 import Data.List.Split
 import Data.List
-import Data.Maybe
 import qualified Data.Map as M
 
 data Dir = L | R deriving (Show, Read, Eq)
 type Map = ([Dir], M.Map String (String, String))
 
 part1, part2 :: Map -> Int
-part1 (d,m) = fromJust . findIndex (=="ZZZ") . scanl (flip next) "AAA" $ cycle d
+part1 = path "AAA"
+
+part2 dm@(d,m) = foldl1 lcm $ map (`path` dm) startNodes
+  where
+    startNodes = filter (isSuffixOf "A") $ M.keys m
+
+path :: String -> Map -> Int
+path start (d,m) = fromJust . findIndex (isSuffixOf "Z") . scanl (flip next) start $ cycle d
   where
     next L = fst . (m M.!)
     next R = snd . (m M.!)
-
-part2 (d,m) = fromJust . findIndex (all $ isSuffixOf "Z") . scanl (flip next) startNodes $ cycle d
-  where
-    startNodes = filter (isSuffixOf "A") $ M.keys m
-    next L = map $ fst . (m M.!)
-    next R = map $ snd . (m M.!)
 
 parse :: String -> Map
 parse = (\[p,xs] -> (map (read . (:[])) p, parseMap xs)) . splitOn "\n\n"
