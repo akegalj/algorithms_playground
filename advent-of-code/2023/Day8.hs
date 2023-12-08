@@ -1,18 +1,23 @@
 import Control.Arrow ((&&&))
 import Data.List.Split
+import Data.List
+import Data.Maybe
 import qualified Data.Map as M
 
 data Dir = L | R deriving (Show, Read, Eq)
 type Map = ([Dir], M.Map String (String, String))
 
 part1, part2 :: Map -> Int
-part1 (d,m) = go 0 "AAA" $ concat $ repeat d
+part1 (d,m) = fromJust . findIndex (=="ZZZ") . scanl (flip next) "AAA" $ cycle d
   where
-    go step "ZZZ" _ = step
-    go step pos (L:xs) = go (step+1) (fst $ m M.! pos) xs
-    go step pos (R:xs) = go (step+1) (snd $ m M.! pos) xs
+    next L = fst . (m M.!)
+    next R = snd . (m M.!)
 
-part2 = const 0
+part2 (d,m) = fromJust . findIndex (all $ isSuffixOf "Z") . scanl (flip next) startNodes $ cycle d
+  where
+    startNodes = filter (isSuffixOf "A") $ M.keys m
+    next L = map $ fst . (m M.!)
+    next R = map $ snd . (m M.!)
 
 parse :: String -> Map
 parse = (\[p,xs] -> (map (read . (:[])) p, parseMap xs)) . splitOn "\n\n"
