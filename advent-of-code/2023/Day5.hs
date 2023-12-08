@@ -1,5 +1,3 @@
-#!/usr/bin/env nix-shell
-#!nix-shell --pure -i runhaskell -p "haskell.packages.ghc98.ghcWithPackages (pkgs: with pkgs; [ split ])"
 {-# LANGUAGE BangPatterns #-}
 
 import Control.Arrow ((&&&))

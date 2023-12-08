@@ -1,6 +1,3 @@
-#!/usr/bin/env nix-shell
-#!nix-shell --pure -i runhaskell -p "haskell.packages.ghc98.ghcWithPackages (pkgs: with pkgs; [ split ])"
-
 import Control.Arrow ((&&&))
 import Data.List.Split
 import qualified Data.Set as S
