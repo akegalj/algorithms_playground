@@ -1,6 +1,9 @@
 import Prelude hiding (lookup, filter)
-import Data.Map (fromList, Map, lookup, keys, filter, insert)
+import Data.Map (fromList, Map, lookup, keys, filter, insert, difference, size, findMax, intersection)
 import Data.Maybe (catMaybes)
+import Data.Ord (comparing)
+import Data.List (maximumBy, (\\))
+import Control.Arrow ((&&&))
 
 type Coord = (Int, Int)
 data Direction = North | East | South | West deriving (Eq, Show, Enum)
@@ -42,7 +45,7 @@ step (x, y) d = case d of
   East  -> (succ x, y)
   West  -> (pred x, y)
 
-findLoop :: Diagram -> Coord -> Maybe [Coord]
+findLoop :: Diagram -> Coord -> Maybe Diagram
 findLoop d start = checkLoop . go (step start dir) $ opposite dir
   where
     Just (Pipe (dir, _)) = lookup start d
@@ -54,11 +57,11 @@ findLoop d start = checkLoop . go (step start dir) $ opposite dir
                             | dir2 /= prevDir && isConnected d cur (step cur dir2) -> go (step cur dir2) $ opposite dir2
                           _ -> [] -- not a loop
     checkLoop xs
-      | last xs == start = Just xs
+      | last xs == start = Just $ d `intersection` (fromList $ map (,Start) xs)
       | otherwise = Nothing
 
-farthestLoop :: Diagram -> Int -- [Coord]
-farthestLoop d = (`div` 2) . maximum . map length . catMaybes . map (\nd -> findLoop nd start) . map (\sPipe -> insert start sPipe d) $ map (Pipe . parsePipe) "|-JL7F"
+farthestLoop :: Diagram -> Diagram
+farthestLoop d = maximumBy (comparing size) . catMaybes . map (\nd -> findLoop nd start) . map (\sPipe -> insert start sPipe d) $ map (Pipe . parsePipe) "|-JL7F"
   where
     start = head . keys $ filter (==Start) d
 
@@ -78,4 +81,23 @@ parseTile p = Pipe $ parsePipe p
 parseDiagram :: String -> Diagram
 parseDiagram = fromList . concatMap (\(y, xs) -> map (\(x, t) -> ((x,y),parseTile t)) xs) . map (fmap $ zip [0..]) . zip [0..] . lines
 
-main = interact $ show . farthestLoop . parseDiagram
+countInside :: Diagram -> [[Coord]]
+countInside d = map snd [ foldr (\x st -> count (x,y) st) (False, []) [0..maxX] | y <- [0..maxY]]
+  where
+    maxX = maximum . map fst $ keys d
+    maxY = maximum . map snd $ keys d
+    count c (f, xs) = case lookup c d of
+      Nothing -> (f, if f then c : xs else xs)
+      Just Start -> error "boom start"
+      Just Ground -> error "boom ground"
+      Just pipe
+        | pipe `elem` [Pipe (East, West), Pipe (South, East), Pipe (South, West)] -> (f, xs)
+        | otherwise -> (not f, xs)
+
+part1 :: Diagram -> Int
+part1 = (`div` 2) . size . farthestLoop
+
+part2 :: Diagram -> Int
+part2 = length . concat . countInside . farthestLoop
+
+main = interact $ show . (part1 &&& part2) . parseDiagram
