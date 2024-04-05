@@ -11,8 +11,8 @@ parseInput = S.fromList . map fst . filter ((=='#') . snd) . index
   where
     index = concatMap (\(y,xs) -> map (\(x,c) -> ((x,y),c)) xs) . map (fmap $ zip [0..]) . zip [0..] . lines
 
-expandGalaxy :: Image -> Image
-expandGalaxy i = S.map (\(x,y) -> (x + count (<x) emptyCol, y + count (<y) emptyRow)) i
+expandGalaxy :: Int -> Image -> Image
+expandGalaxy e i = S.map (\(x,y) -> (x + (e-1) * (count (<x) emptyCol), y + (e-1) * (count (<y) emptyRow))) i
   where
     maxX = S.findMax $ S.map fst i
     maxY = S.findMax $ S.map snd i
@@ -27,6 +27,6 @@ part1 :: Image -> Int
 part1 i = (`div` 2) . sum . map (uncurry distance) . S.toList $ S.cartesianProduct i i
 
 part2 :: Image -> Int
-part2 = const 0
+part2 = part1
 
-main = interact $ show . (part1 &&& part2) . expandGalaxy . parseInput
+main = interact $ show . (part1 . expandGalaxy 2 &&& part2 . expandGalaxy (10^6)) . parseInput
