@@ -1,7 +1,7 @@
 import Control.Arrow ((&&&))
 import qualified Data.Map as M
 import Data.List.Split (splitOn)
-import Data.List (transpose)
+import Data.List (transpose, tails, inits)
 
 data Field = Dot | Hash deriving (Eq, Show)
 type Coord = (Int, Int)
@@ -15,7 +15,10 @@ parseInput = map parsePattern . splitOn "\n\n"
     parseField '#' = Hash
 
 horizontal :: Pattern -> [Int]
-horizontal xs = map fst . filter snd . zip [1..] . zipWith (==) xs $ tail xs
+horizontal xs = index . init . tail . zipWith isMirror (inits xs) $ tails xs
+  where
+    index = map fst . filter snd . zip [1..]
+    isMirror a = and . zipWith (==) (reverse a)
 
 vertical :: Pattern -> [Int]
 vertical = horizontal . transpose
