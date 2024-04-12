@@ -1,26 +1,10 @@
-{-# LANGUAGE TypeFamilies #-}
 import Control.Arrow ((&&&))
 import Data.List (transpose, foldl', groupBy, sort, iterate')
-import Debug.Trace
 import Prelude hiding (cycle)
-import Data.MemoTrie
-import GHC.Generics (Generic)
+import qualified Data.Set as S
 
-data Tile = Round | Cube | Space deriving (Eq, Ord, Show, Generic)
+data Tile = Round | Cube | Space deriving (Eq, Ord, Show)
 type Dish = [[Tile]]
-
-showDish :: Dish -> String
-showDish = unlines . map (map showTile)
-  where
-    showTile Round = 'O'
-    showTile Cube = '#'
-    showTile Space = '.'
-
-instance HasTrie Tile where
-  newtype (Tile :->: b) = TileTrie { unTileTrie :: Reg Tile :->: b }
-  trie = trieGeneric TileTrie
-  untrie = untrieGeneric unTileTrie
-  enumerate = enumerateGeneric unTileTrie
 
 parseInput :: String -> Dish
 parseInput = map (map parseRock) . lines
@@ -29,26 +13,26 @@ parseInput = map (map parseRock) . lines
     parseRock '#' = Cube
     parseRock '.' = Space
 
-loadLeft :: Dish -> Int
-loadLeft = sum . map (snd . foldl' count (0,0) . zip [0..] . reverse . (Cube:))
-  where
-    count (c,s) (i,t)
-      | t == Round = (c+1,s)
-      | t == Cube = (0, s + i*c - c*(c-1) `div` 2)
-      | otherwise = (c,s)
+load :: Dish -> Int
+load = sum . map (\(i,l) -> (*i) . length $ filter (==Round) l) . zip [1..] . reverse
 
 cycle :: Dish -> Dish
-cycle = memo $ pullRight . pullDown . pullLeft . pullUp
-  where
-    pullLeft = map $ concatMap sort . groupBy (\a b -> a /= Cube && b /= Cube)
-    pullUp = transpose . pullLeft . transpose
-    pullRight = map reverse . pullLeft . map reverse
-    pullDown = reverse . pullUp . reverse -- transpose . pullRight . transpose
+cycle = pullRight . pullDown . pullLeft . pullUp
+
+pullLeft = map $ concatMap sort . groupBy (\a b -> a /= Cube && b /= Cube)
+pullUp = transpose . pullLeft . transpose
+pullRight = map reverse . pullLeft . map reverse
+pullDown = reverse . pullUp . reverse -- transpose . pullRight . transpose
 
 part1 :: Dish -> Int
-part1 = loadLeft . transpose
+part1 = load . pullUp
 
 part2 :: Dish -> Int
-part2 = sum . map part1 . take (10^9) . iterate' cycle
+part2 = load . index 1000000000 . findCycle mempty mempty . iterate' cycle
+  where
+    index i (ls,cs) = cs !! ((i - length ls) `rem` length cs)
+    findCycle s res (x:xs)
+      | x `S.member` s = let rres = reverse res in (takeWhile (/=x) rres, dropWhile (/=x) rres)
+      | otherwise = findCycle (S.insert x s) (x:res) xs
 
 main = interact $ show . (part1 &&& part2) . parseInput
