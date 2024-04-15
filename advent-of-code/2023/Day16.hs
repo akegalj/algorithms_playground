@@ -57,6 +57,13 @@ part1 :: Puzzle -> Int
 part1 p = S.size . S.map fst $ energize ((0,0),E) p mempty
 
 part2 :: Puzzle -> Int
-part2 = const 0
+part2 p = maximum $ map (\start -> S.size . S.map fst $ energize start p mempty) start
+  where
+    ((maxX, maxY),_) = M.findMax p
+    start = concat [up, down, left, right]
+    up = map (\x -> ((x,0),S)) [0..maxX]
+    down = map (\x -> ((x,maxY),N)) [0..maxX]
+    left = map (\y -> ((0,y),E)) [0..maxY]
+    right = map (\y -> ((maxX,y),W)) [0..maxY]
 
 main = interact $ show . (part1 &&& part2) . parseInput
