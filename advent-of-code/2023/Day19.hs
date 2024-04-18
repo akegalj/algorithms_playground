@@ -5,14 +5,16 @@ import Text.ParserCombinators.ReadP
 import Data.Char (isAlpha, isNumber, toUpper)
 import Control.Applicative ((<|>))
 import Data.Maybe (catMaybes)
+import Data.List (sort, groupBy)
+import Data.Function (on)
 
 type Name = String
 
-data Part = X | M | A | S deriving (Show, Read, Enum)
-data Ordering = LT | GT deriving Show
+data Part = X | M | A | S deriving (Show, Read, Enum, Eq, Ord)
+data Ordering = LT | GT deriving (Show, Eq, Ord)
 data Result = Accepted | Rejected deriving (Show, Eq)
 data SendTo = Dest Name | Result Result deriving (Show, Eq)
-data Condition = Condition Part Ordering Int deriving Show
+data Condition = Condition { part :: Part, ord :: Ordering, num :: Int } deriving (Show, Eq, Ord)
 data Rule = Rule Condition SendTo deriving Show
 newtype LastRule = LastRule SendTo deriving Show
 type Workflows = M.Map Name ([Rule],LastRule)
@@ -71,6 +73,9 @@ part1 (wfs,rs) = sum . map fst . filter snd $ map (rating &&& isAccepted) rs
     isAccepted r = any (all (flip test r)) $ workflow (Dest "in") wfs
 
 part2 :: System -> Int
-part2 = undefined
+part2 (wfs,_) = sum . map product . map combinations . map (initCond<>) $ workflow (Dest "in") wfs
+  where
+    combinations = map (\(h:cs) -> max 0 $ num h - num (last cs) - 1) . groupBy ((==) `on` part) . sort
+    initCond = concatMap (\p -> [Condition p GT 0, Condition p LT 4001]) [X .. S]
 
 main = interact $ show . (part1 &&& part2) . parseInput
