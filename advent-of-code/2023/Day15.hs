@@ -1,11 +1,9 @@
 import Control.Arrow ((&&&))
-import Data.List.Split (splitOn)
 import Data.Char (ord, isAlpha, isNumber)
 import Data.List (foldl')
 import qualified Data.Map as M
 import Text.ParserCombinators.ReadP
 import Control.Applicative ((<|>))
-import Debug.Trace
 
 newtype Hash = Hash { getHash :: Int } deriving (Eq, Ord, Show)
 newtype FocalLength = FocalLength Int deriving (Eq, Show)
