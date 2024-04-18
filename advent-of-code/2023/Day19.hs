@@ -4,6 +4,7 @@ import qualified Data.Map as M
 import Text.ParserCombinators.ReadP
 import Data.Char (isAlpha, isNumber, toUpper)
 import Control.Applicative ((<|>))
+import Data.Maybe (catMaybes)
 
 type Name = String
 
@@ -14,9 +15,9 @@ data SendTo = Dest Name | Result Result deriving (Show, Eq)
 data Condition = Condition Part Ordering Int deriving Show
 data Rule = Rule Condition SendTo deriving Show
 newtype LastRule = LastRule SendTo deriving Show
-data Workflow = Workflow Name [Rule] LastRule deriving Show
+type Workflows = M.Map Name ([Rule],LastRule)
 data Rating = Rating { x,m,a,s :: Int } deriving Show
-type System = ([Workflow],[Rating])
+type System = (Workflows,[Rating])
 
 rating :: Rating -> Int
 rating r = sum $ map (getPart r) [X .. S]
@@ -32,14 +33,15 @@ test :: Condition -> Rating -> Bool
 test (Condition p LT n) r = getPart r p < n
 test (Condition p GT n) r = getPart r p > n
 
+notCond :: Condition -> Condition
+notCond (Condition p LT n) = Condition p GT $ pred n
+notCond (Condition p GT n) = Condition p LT $ succ n
+
 parseInput :: String -> System
 parseInput = fst . last . readP_to_S systemP
   where
-    systemP = (,) <$> many (workflowP <* skipSpaces) <*> many (ratingP <* skipSpaces)
-    workflowP = do
-      n <- nameP
-      (rs,lr) <- braces ((,) <$> (sepBy ruleP comma <* comma) <*> lruleP)
-      pure $ Workflow n rs lr
+    systemP = (,) <$> M.fromList <$> many (workflowP <* skipSpaces) <*> many (ratingP <* skipSpaces)
+    workflowP = (,) <$> nameP <*> braces ((,) <$> (sepBy ruleP comma <* comma) <*> lruleP)
     ruleP = Rule <$> conditionP <*> (char ':' *> sendToP)
     lruleP = LastRule <$> sendToP
     conditionP = Condition <$> partP <*> orderingP <*> numP
@@ -52,21 +54,23 @@ parseInput = fst . last . readP_to_S systemP
     nameP = many1 $ satisfy isAlpha
     comma = char ','
 
-workflow :: SendTo -> M.Map Name ([Rule],LastRule) -> Rating -> Result
-workflow (Result r) _ _ = r
-workflow (Dest n) wfs r = go $ wfs M.! n
+workflow :: SendTo -> Workflows -> [[Condition]]
+workflow st = catMaybes . mworkflow st
   where
-    go ([],LastRule st) = workflow st wfs r
-    go ((Rule c st):rs,lr)
-      | test c r = workflow st wfs r
-      | otherwise = go (rs,lr)
+    mworkflow (Result Rejected) _ = [Nothing]
+    mworkflow (Result Accepted) _ = [Just []]
+    mworkflow (Dest n) wfs = go $ wfs M.! n
+      where
+        go ([],LastRule st) = mworkflow st wfs
+        go ((Rule c st):rs,lr) = concat [mfmap (c:) $ mworkflow st wfs, mfmap (notCond c:) $ go (rs,lr)]
+        mfmap = map . fmap
 
 part1 :: System -> Int
-part1 (ws,rs) = sum . map fst . filter ((==Accepted) . snd) $ map (rating &&& workflow (Dest "in") wsMap) rs
+part1 (wfs,rs) = sum . map fst . filter snd $ map (rating &&& isAccepted) rs
   where
-    wsMap = M.fromList $ map (\(Workflow n r l) -> (n,(r,l))) ws
+    isAccepted r = any (all (flip test r)) $ workflow (Dest "in") wfs
 
 part2 :: System -> Int
-part2 = const 0
+part2 = undefined
 
 main = interact $ show . (part1 &&& part2) . parseInput
